@@ -47,28 +47,29 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     if (!origin) {
       return callback(null, true);
     }
 
+    // Allow configured origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.error(`CORS blocked: ${origin}`);
+    // Allow Vercel deployments for this project
+    if (
+      origin.startsWith('https://ai-resume-analyzer-') &&
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+
+    console.error('CORS blocked:', origin);
     return callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true
 }));
-// Parse JSON requests
-app.use(express.json({ limit: '10mb' }));
-
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
-});
-
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
