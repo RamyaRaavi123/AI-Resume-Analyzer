@@ -42,7 +42,8 @@ const app = express();
  */
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://ai-resume-analyzer-ashy-xi.vercel.app'
+  'https://ai-resume-analyzer-ashy-xi.vercel.app',
+  'https://ai-resume-analyzer-git-main-raaviramya46-6930s-projects.vercel.app'
 ];
 
 app.use(
