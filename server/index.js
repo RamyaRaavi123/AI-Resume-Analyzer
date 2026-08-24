@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -14,23 +15,64 @@ const notificationRoutes = require('./routes/notifications');
 const chatRoutes = require('./routes/chat');
 const companyRoutes = require('./routes/company');
 
+// Connect to MongoDB
 connectDB();
 
+// Check Gemini API key
 if (!process.env.GEMINI_API_KEY?.trim()) {
-  console.warn('Warning: GEMINI_API_KEY is not set. AI features (resume analysis, mock interview, chat) will not work.');
-  console.warn('Get a free key at https://aistudio.google.com/app/apikey and add it to server/.env');
+  console.warn(
+    'Warning: GEMINI_API_KEY is not set. AI features (resume analysis, mock interview, chat) will not work.'
+  );
+
+  console.warn(
+    'Get a free key at https://aistudio.google.com/app/apikey and add it to server/.env'
+  );
 }
 
+// Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+
+/*
+ * CORS configuration
+ * Allows both local development and the deployed Vercel frontend.
+ */
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://ai-resume-analyzer-ashy-xi.vercel.app'
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests that don't have an Origin header
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`CORS blocked request from: ${origin}`);
+      return callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true
+  })
+);
+
+// Parse JSON requests
 app.use(express.json({ limit: '10mb' }));
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
 
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/interview', interviewRoutes);
@@ -41,9 +83,18 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/companies', companyRoutes);
 
+// Error handler
 app.use((err, _req, res, _next) => {
-  res.status(err.status || 500).json({ message: err.message || 'Server error' });
+  console.error('Server error:', err);
+
+  res.status(err.status || 500).json({
+    message: err.message || 'Server error'
+  });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
