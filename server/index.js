@@ -46,25 +46,21 @@ const allowedOrigins = [
   'https://ai-resume-analyzer-git-main-raaviramya46-6930s-projects.vercel.app'
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests that don't have an Origin header
-      if (!origin) {
-        return callback(null, true);
-      }
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-      console.warn(`CORS blocked request from: ${origin}`);
-      return callback(new Error(`CORS blocked: ${origin}`));
-    },
-    credentials: true
-  })
-);
-
+    console.error(`CORS blocked: ${origin}`);
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true
+}));
 // Parse JSON requests
 app.use(express.json({ limit: '10mb' }));
 
