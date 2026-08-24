@@ -38,38 +38,49 @@ const app = express();
 
 /*
  * CORS configuration
- * Allows both local development and the deployed Vercel frontend.
+ *
+ * Allows:
+ * - Local Vite development
+ * - Vercel deployments for this project
  */
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://ai-resume-analyzer-ashy-xi.vercel.app',
-  'https://ai-resume-analyzer-git-main-raaviramya46-6930s-projects.vercel.app'
-];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no Origin header
+      // (for example, direct server-to-server requests)
+      if (!origin) {
+        return callback(null, true);
+      }
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) {
-      return callback(null, true);
-    }
+      // Allow local development
+      if (origin === 'http://localhost:5173') {
+        return callback(null, true);
+      }
 
-    // Allow configured origins
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+      // Allow Vercel deployments
+      if (
+        origin.startsWith('https://ai-resume-analyzer-') &&
+        origin.endsWith('.vercel.app')
+      ) {
+        return callback(null, true);
+      }
 
-    // Allow Vercel deployments for this project
-    if (
-      origin.startsWith('https://ai-resume-analyzer-') &&
-      origin.endsWith('.vercel.app')
-    ) {
-      return callback(null, true);
-    }
+      console.error('CORS blocked:', origin);
+      return callback(new Error(`CORS blocked: ${origin}`));
+    },
 
-    console.error('CORS blocked:', origin);
-    return callback(new Error(`CORS blocked: ${origin}`));
-  },
-  credentials: true
-}));
+    credentials: true
+  })
+);
+
+// Parse JSON requests
+app.use(express.json({ limit: '10mb' }));
+
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
